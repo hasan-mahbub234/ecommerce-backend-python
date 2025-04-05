@@ -2,8 +2,9 @@ from sqlmodel import SQLModel, Field, Column
 import sqlalchemy.dialects.mysql as mysqldb
 from datetime import datetime
 import uuid
-from typing import List
-from sqlalchemy import JSON, Text
+from typing import Optional, List
+from sqlalchemy import JSON, String
+
 
 class Categories(SQLModel, table=True):
     __tablename__ = 'Categories'
@@ -17,14 +18,17 @@ class Categories(SQLModel, table=True):
         )
     )
     name: str = Field(nullable=False)
-    
-    quantity: int = Field(nullable=False)
-    image: str = Field(nullable=False)
-    description: str = Field(
-        sa_column=Column(Text, nullable=False)  # ✅ Supports HTML content
+    image: Optional[str] = Field(
+        sa_column=Column(
+            String(255),  # Store file path
+            nullable=True, default= None
+        )
     )
-    sub_category: List[str] = Field(
-        sa_column=Column(JSON)  # ✅ Removed nullable=False to avoid RuntimeError
+    sub_category: Optional[list] = Field(
+        sa_column=Column(
+            JSON,  # Use JSON column type for list of objects
+            nullable=True
+        )
     )
     created_at: datetime = Field(
         sa_column=Column(

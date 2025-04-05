@@ -2,8 +2,9 @@ from sqlmodel import SQLModel, Field, Column
 import sqlalchemy.dialects.mysql as mysqldb
 from datetime import datetime
 import uuid
-from typing import List
-from sqlalchemy import JSON, Text
+from typing import Optional, List
+from sqlalchemy import JSON, Text, String
+
 
 class Products(SQLModel, table=True):
     __tablename__ = 'Products'
@@ -17,17 +18,29 @@ class Products(SQLModel, table=True):
         )
     )
     name: str = Field(nullable=False)
-    price: int = Field(nullable=False)
     quantity: int = Field(nullable=False)
-    image: str = Field(nullable=False)
-    video: str = Field(nullable=False)  # New field for video URL/path
+    brand: str = Field(nullable=False)
+    price: int = Field(nullable=False)
+    category: str = Field(nullable=False)
     description: str = Field(
         sa_column=Column(Text, nullable=False)  # ✅ Supports HTML content
     )
-    category: List[str] = Field(
-        sa_column=Column(JSON)  # ✅ Removed nullable=False to avoid RuntimeError
+    image: Optional[str] = Field(
+        sa_column=Column(
+            String(255),  # Store file path
+            nullable=True, default= None
+        )
     )
-    offer: int = Field(nullable=True)  # ✅ New field for offers
+    video: Optional[str] = Field(
+        sa_column=Column(
+            String(255),  # Store file path
+            nullable=True, default= None
+        )
+    )
+    discount: Optional[int] = Field(default=None)  # ✅ Optional discount
+    
+    age: Optional[str] = Field(default=None)  # ✅ Optional age range
+    sub_category: Optional[str] = Field(default=None)
     created_at: datetime = Field(
         sa_column=Column(
             mysqldb.DATETIME,

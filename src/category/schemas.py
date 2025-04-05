@@ -1,22 +1,31 @@
 from pydantic import BaseModel
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
-class CategoriesBase(BaseModel):
+
+class SubCategory(BaseModel):
+    name: Optional[str] = None
+    image: Optional[str] = None
+
+
+class CategoryBase(BaseModel):
     name: str
-    quantity: int
-    image: str
-    description: str
-    sub_category: List[str]  
+    image: Optional[str] = None  # Store the file path or URL
+    sub_category: Optional[List[SubCategory]] = None  # Use the SubCategory model
 
-class Categories(CategoriesBase):
+
+class Categories(CategoryBase):
     uid: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-class CreateCategories(CategoriesBase):
+
+class CreateCategories(CategoryBase):
     pass  
 
-class UpdateCategories(CategoriesBase):
-    pass 
+
+class UpdateCategories(BaseModel):
+    name: Optional[str] = None
+    image: Optional[str] = None
+    sub_category: Optional[List[SubCategory]] = None  
