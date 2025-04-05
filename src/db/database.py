@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
 # MySQL Database URL format
-DATABASE_URL = "mysql+pymysql://root:mahbub123@localhost:3306/ecommerce_website"
+DATABASE_URL = "mysql+pymysql://mahbubdb:mahbub123@localhost:3306/ecommerce_website"
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL, echo=True)
