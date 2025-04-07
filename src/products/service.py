@@ -22,44 +22,30 @@ class ProductService:
         product = result.scalar_one_or_none()
 
         if product and product.image:
-            product.image = f"http://localhost:8000/{product.image}"
+            product.image = f"https://api.toprateddesigner.com/{product.image}"
+        if product and product.video:
+            product.video = f"https://api.toprateddesigner.com/{product.video}"
         return product
     
-    def save_image(self, image_file: UploadFile) -> str:
-        """ Save image to disk and return the file path """
-        if not image_file:
-            return None
-
-        file_extension = image_file.filename.split(".")[-1]
-        file_name = f"{uuid.uuid4()}.{file_extension}"
-        file_path = os.path.join(UPLOAD_FOLDER, file_name)
-
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure directory exists
-
-        with open(file_path, "wb") as buffer:
-            buffer.write(image_file.file.read())
-
-        return file_path
-    
-    def save_video(self, file: UploadFile, folder: str) -> str:
-        """ Save file to disk and return the file path """
+    def save_file(self, file: UploadFile, subfolder: str = "") -> str:
+        """Save file to disk and return the file path"""
         if not file:
             return None
 
         file_extension = file.filename.split(".")[-1]
         file_name = f"{uuid.uuid4()}.{file_extension}"
-        video_file_path = os.path.join(UPLOAD_FOLDER, folder, file_name)
+        file_path = os.path.join(UPLOAD_FOLDER, subfolder, file_name)
 
-        os.makedirs(os.path.dirname(video_file_path), exist_ok=True)  # Ensure directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        with open(video_file_path, "wb") as buffer:
+        with open(file_path, "wb") as buffer:
             buffer.write(file.file.read())
 
-        return video_file_path
+        return file_path
 
     def create_product(self, product_data: CreateProduct, image_file: Optional[UploadFile], video_file: Optional[UploadFile], session: Session):
-        image_path = self.save_image(image_file) if image_file else None
-        video_path = self.save_video(video_file) if video_file else None
+        image_path = self.save_file(image_file, "images") if image_file else None
+        video_path = self.save_file(video_file, "videos") if video_file else None
 
         new_product = Products(
             name=product_data.name,
@@ -79,74 +65,42 @@ class ProductService:
         session.commit()
         session.refresh(new_product)
 
-        # Return the full URL to the image after creating the product
         if new_product.image:
-            new_product.image = f"http://localhost:8000/{new_product.image}"
-
+            new_product.image = f"https://api.toprateddesigner.com/{new_product.image}"
         if new_product.video:
-            new_product.video = f"http://localhost:8000/{new_product.video}"
+            new_product.video = f"https://api.toprateddesigner.com/{new_product.video}"
 
         return new_product
 
     def update_product(self, product_uid: uuid.UUID, product_update_data: UpdateProduct, image_file: Optional[UploadFile], video_file: Optional[UploadFile], session: Session):
         product = session.query(Products).filter(Products.uid == product_uid.bytes).first()
-
         if not product:
             return None
         
+        # Delete old files if they exist and new files are being uploaded
         if image_file and product.image and os.path.exists(product.image):
             os.remove(product.image)
-
         if video_file and product.video and os.path.exists(product.video):
             os.remove(product.video)
 
+        # Update fields if they are provided
+        for field, value in product_update_data.dict(exclude_unset=True).items():
+            setattr(product, field, value)
 
-        if product_update_data.name:
-            product.name = product_update_data.name
-
-        if product_update_data.quantity:
-            product.quantity = product_update_data.quantity
-
-        if product_update_data.description:
-            product.description = product_update_data.description
-        
-        if product_update_data.price:
-            product.price = product_update_data.price
-
-        if product_update_data.brand:
-            product.brand = product_update_data.brand
-
-        if product_update_data.category:
-            product.category = product_update_data.category
-
-        if product_update_data.sub_category:
-            product.sub_category = product_update_data.sub_category
-
-        if product_update_data.age:
-            product.age = product_update_data.age
-
-        if product_update_data.discount:
-            product.discount = product_update_data.discount
-
-
+        # Handle file uploads
         if image_file:
-            product.image = self.save_image(image_file)
-
+            product.image = self.save_file(image_file, "images")
         if video_file:
-            product.video = self.save_video(video_file)
+            product.video = self.save_file(video_file, "videos")
 
         product.updated_at = datetime.now()
-
         session.commit()
         session.refresh(product)
 
-        # Return the full URL to the image after updating the product
         if product.image:
-            product.image = f"http://localhost:8000/{product.image}"
-
+            product.image = f"https://api.toprateddesigner.com/{product.image}"
         if product.video:
-            product.video = f"http://localhost:8000/{product.video}"
-
+            product.video = f"https://api.toprateddesigner.com/{product.video}"
 
         return product
 
@@ -155,10 +109,8 @@ class ProductService:
         if product:
             if product.image and os.path.exists(product.image):
                 os.remove(product.image)
-
             if product.video and os.path.exists(product.video):
                 os.remove(product.video)
-
             session.delete(product)
             session.commit()
             return True

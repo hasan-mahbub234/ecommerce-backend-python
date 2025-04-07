@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.products.routes import product_router
 from src.category.routes import category_router
 from src.sub_category.routes import sub_category_router
+from src.TopRated.blogs.route import blog_router
+from src.TopRated.expert.route import expert_router
 from contextlib import asynccontextmanager
 from src.db.database import init_db
 import os
@@ -46,3 +48,5 @@ app.mount("/uploads", StaticFiles(directory=upload_folder), name="uploads")
 app.include_router(product_router, prefix=f"/api/{version}/product", tags=['product'])
 app.include_router(category_router, prefix=f"/api/{version}/category", tags=['category'])
 app.include_router(sub_category_router, prefix=f"/api/{version}/sub_category", tags=['sub_category'])
+app.include_router(blog_router, prefix=f"/api/{version}/blogs", tags=['blogs'])
+app.include_router(expert_router, prefix=f"/api/{version}/experts", tags=['experts'])
