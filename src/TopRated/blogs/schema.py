@@ -36,3 +36,9 @@ class CreateBlog(BlogsBase):
 
 class UpdateBlog(BlogsBase):
     images: Optional[List[str]] = []
+    title: Optional[str] = None
+    slug: Optional[str] = None
+    content: Optional[str] = None
+    summary: Optional[str] = None
+    keywords: Optional[str] = None
+    author: Optional[str] = None

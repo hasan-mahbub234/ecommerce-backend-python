@@ -53,53 +53,19 @@ def single_blog(blog_uid: uuid.UUID, session: Session = Depends(get_session)):
         detail="Blog not found"
     )
 
-@blog_router.get("/image/{blog_uid}")
-def get_blog_images(blog_uid: uuid.UUID, session: Session = Depends(get_session)):
-    blog = blog_service.get_singleBlog(blog_uid, session)
-    if not blog or not blog.images:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Images not found"
-        )
-    
-    # For multiple images, you might want to return a list of FileResponses
-    # Here we're just returning the first image as an example
-    first_image = blog.images[0] if isinstance(blog.images, list) else blog.images
-    image_path = first_image.image_url  # Get the actual path from BlogImage object
-    
-    if os.path.exists(image_path):
-        # Get file extension for media type
-        file_extension = os.path.splitext(image_path)[1].lower()
-        media_types = {
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".png": "image/png",
-            ".gif": "image/gif",
-            ".bmp": "image/bmp",
-            ".webp": "image/webp",
-            ".tiff": "image/tiff",
-            ".ico": "image/vnd.microsoft.icon",
-            ".svg": "image/svg+xml"
-        }
-        media_type = media_types.get(file_extension, "application/octet-stream")
-        
-        return FileResponse(image_path, media_type=media_type)
-    
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Image file not found"
-    )
 
+
+# route.py
 @blog_router.patch("/{blog_uid}", response_model=Blogs)
 def update_blog(
     blog_uid: uuid.UUID,
-    title: str = Form(None),
-    slug: str = Form(None),
-    content: str = Form(None),
-    summary: str = Form(None),
-    keywords: str = Form(None),
-    author: str = Form(None),
-    images_files: List[UploadFile] = File([]),
+    title: Optional[str] = Form(None),
+    slug: Optional[str] = Form(None),
+    content: Optional[str] = Form(None),
+    summary: Optional[str] = Form(None),
+    keywords: Optional[str] = Form(None),
+    author: Optional[str] = Form(None),
+    images_files: Optional[List[UploadFile]] = File(None),
     session: Session = Depends(get_session)
 ):
     blog_update_data = UpdateBlog(

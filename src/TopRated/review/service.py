@@ -1,0 +1,101 @@
+from sqlalchemy.orm import Session
+from sqlmodel import select, desc
+from .model import Reviews
+from .schema import CreateReview, UpdateReview
+import uuid
+from datetime import datetime
+from fastapi import UploadFile
+import os
+from typing import Optional
+from ..blogs.service import BASE_URL
+
+UPLOAD_FOLDER = "uploads/"
+
+class ReviewService:
+    def get_all_review(self, session: Session):
+        statement = select(Reviews).order_by(desc(Reviews.created_at))
+        result = session.execute(statement)
+        reviews = result.scalars().all()
+        for review in reviews:
+            self.add_image_host(review)
+        return reviews
+
+    def get_singleReview(self, review_uid: uuid.UUID, session: Session):
+        statement = select(Reviews).where(Reviews.uid == review_uid.bytes)
+        result = session.execute(statement)
+        review = result.scalar_one_or_none()
+        if review:
+            self.add_image_host(review)
+        return review
+
+    def save_image(self, image_file: UploadFile) -> Optional[str]:
+        """Save image to disk and return the file path"""
+        if not image_file:
+            return None
+
+        file_extension = image_file.filename.split(".")[-1]
+        file_name = f"{uuid.uuid4()}.{file_extension}"
+        file_path = os.path.join(UPLOAD_FOLDER, file_name)
+
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(image_file.file.read())
+
+        return file_path
+
+    def create_review(self, review_data: CreateReview, image_file: Optional[UploadFile], session: Session):
+        image_path = self.save_image(image_file) if image_file else None
+
+        new_review = Reviews(
+            name=review_data.name,
+            review=review_data.review,
+            position=review_data.position,
+            image=image_path
+        )
+
+        session.add(new_review)
+        session.commit()
+        session.refresh(new_review)
+
+        self.add_image_host(new_review)
+        return new_review
+
+    def update_review(self, review_uid: uuid.UUID, review_update_data: UpdateReview, image_file: Optional[UploadFile], session: Session):
+        review = session.query(Reviews).filter(Reviews.uid == review_uid.bytes).first()
+        if not review:
+            return None
+
+        # Delete old image if new one is provided
+        if image_file and review.image and os.path.exists(review.image):
+            os.remove(review.image)
+
+        # Only update fields that were actually provided
+        update_data = review_update_data.dict(exclude_unset=True)
+        for attr, value in update_data.items():
+            setattr(review, attr, value)
+
+        if image_file:
+            review.image = self.save_image(image_file)
+
+        review.updated_at = datetime.now()
+        session.commit()
+        session.refresh(review)
+        
+        self.add_image_host(review)
+        return review
+    
+    def delete_review(self, review_uid: uuid.UUID, session: Session):
+        review = session.query(Reviews).filter(Reviews.uid == review_uid.bytes).first()
+        if review:
+            if review.image and os.path.exists(review.image):
+                os.remove(review.image)
+
+            session.delete(review)
+            session.commit()
+            return True
+        return False
+
+    def add_image_host(self, review: Reviews):
+        if review and review.image and not review.image.startswith("http"):
+            review.image = f"{BASE_URL}{review.image}"

@@ -19,7 +19,7 @@ class Experts(SQLModel, table=True):
     name: str = Field(nullable=False)
     type: str = Field(nullable=False)
     exp: str = Field(nullable=False)
-    technology: List[str] = Field(  # Fixed typo (was 'techology')
+    technology: List[str] = Field( 
         sa_column=Column(JSON),
         default=[],
     )

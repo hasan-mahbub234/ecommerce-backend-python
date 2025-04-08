@@ -21,33 +21,19 @@ def create_expert(
     name: str = Form(...),
     type: str = Form(...),
     exp: str = Form(...),
-    technology: List[str] = Form(...),
+    technology: str = Form(...),
     image_file: UploadFile = File(),
     session: Session = Depends(get_session)
 ):
+    technology_list = [tech.strip() for tech in technology.split(",")] if technology else []
+    
     expert_data = ExpertCreate(
-        name=name, type=type, exp=exp, technology=technology
+        name=name, type=type, exp=exp, technology=technology_list
     )
     new_expert = expert_service.create_expert(expert_data, image_file, session)
 
     return new_expert
 
-@expert_router.get("/image/{expert_uid}")
-def get_product_image(expert_uid: uuid.UUID, session: Session = Depends(get_session)):
-    expert = expert_service.get_singleExpert(expert_uid, session)
-    if expert and expert.image and os.path.exists(expert.image):
-        return FileResponse(expert.image, media_type={
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".png": "image/png",
-            ".gif": "image/gif",
-            ".bmp": "image/bmp",
-            ".webp": "image/webp",
-            ".tiff": "image/tiff",
-            ".ico": "image/vnd.microsoft.icon",
-            ".svg": "image/svg+xml"
-        })  # Adjust MIME type as needed
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
 
 @expert_router.get("/{expert_uid}", response_model=Expert)
 def single_expert(expert_uid: uuid.UUID, session: Session = Depends(get_session)):
@@ -65,8 +51,8 @@ def update_expert(
     name: Optional[str] = Form(None),
     type: Optional[str] = Form(None),
     exp: Optional[str] = Form(None),
-    technology: Optional[str] = Form(None),  # Receive as string
-    image_file: Optional[UploadFile] = File(None),  # Make optional
+    technology: Optional[str] = Form(None),
+    image_file: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session)
 ):
     # Parse technology string to list if provided
@@ -74,12 +60,18 @@ def update_expert(
     if technology is not None:
         technology_list = [tech.strip() for tech in technology.split(",")] if technology else []
     
-    expert_update_data = ExpertUpdate(
-        name=name,
-        type=type,
-        exp=exp,
-        technology=technology_list  # Pass the parsed list
-    )
+    # Create update data with only provided fields
+    update_data = {}
+    if name is not None:
+        update_data['name'] = name
+    if type is not None:
+        update_data['type'] = type
+    if exp is not None:
+        update_data['exp'] = exp
+    if technology_list is not None:
+        update_data['technology'] = technology_list
+    
+    expert_update_data = ExpertUpdate(**update_data)
     
     updated_expert = expert_service.update_expert(
         expert_uid, expert_update_data, image_file, session
