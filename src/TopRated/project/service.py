@@ -4,7 +4,6 @@ from .model import Projects
 from .schema import ProjectCreate, ProjectUpdate
 import uuid
 from datetime import datetime
-from pydantic import EmailStr, ValidationError
 from typing import List, Optional
 
 class ProjectService:

@@ -12,7 +12,7 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     pass
 
-class Project(ProjectBase):
+class Projects(ProjectBase):
     uid: uuid.UUID
     created_at: datetime
     updated_at: datetime

@@ -7,8 +7,15 @@ from datetime import datetime
 from fastapi import UploadFile
 import os
 from typing import List, Optional
+import cloudinary 
+import cloudinary.uploader
 
-UPLOAD_FOLDER = "uploads/"
+cloudinary.config(
+    cloud_name="ddacq5ltb",
+    api_key="985616939343421",
+    api_secret="oI07cgZ3rGa0VJ8DW354oQV013g"
+)
+
 BASE_URL = "https://api.toprateddesigner.com/"
 
 class BlogsService:
@@ -29,17 +36,22 @@ class BlogsService:
         return blog
 
     def save_images(self, images_files: List[UploadFile]) -> List[str]:
-        saved_paths = []
+        """Save multiple images to Cloudinary and return URLs"""
+        saved_urls = []
         for img in images_files:
             if img:
-                file_extension = img.filename.split('.')[-1]
-                file_name = f'{uuid.uuid4()}.{file_extension}'
-                file_path = os.path.join(UPLOAD_FOLDER, file_name)
-                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-                with open(file_path, 'wb') as buffer:
-                    buffer.write(img.file.read())
-                saved_paths.append(file_path)
-        return saved_paths
+                try:
+                    result = cloudinary.uploader.upload(
+                        img.file,
+                        folder="blog_images",
+                        public_id=f"img_{uuid.uuid4().hex}",
+                        resource_type="auto"
+                    )
+                    saved_urls.append(result['secure_url'])
+                except Exception as e:
+                    print(f"Error uploading image {img.filename}: {e}")
+                    continue
+        return saved_urls
 
     def create_blog(self, blog_data: CreateBlog, images_file: List[UploadFile], session: Session):
         new_blog = Blogs(

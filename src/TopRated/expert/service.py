@@ -6,10 +6,16 @@ import uuid
 from datetime import datetime
 from fastapi import UploadFile
 import os
-from typing import Optional
+from typing import List, Optional
 from ..blogs.service import BASE_URL
+import cloudinary 
+import cloudinary.uploader
 
-UPLOAD_FOLDER = "uploads/"
+cloudinary.config(
+    cloud_name="ddacq5ltb",
+    api_key="985616939343421",
+    api_secret="oI07cgZ3rGa0VJ8DW354oQV013g"
+)
 
 class ExpertService:
     def get_all_expert(self, session: Session):
@@ -29,20 +35,21 @@ class ExpertService:
         return expert
 
     def save_image(self, image_file: UploadFile) -> Optional[str]:
-        """Save image to disk and return the file path"""
+        """Save single image to Cloudinary and return URL"""
         if not image_file:
             return None
 
-        file_extension = image_file.filename.split(".")[-1]
-        file_name = f"{uuid.uuid4()}.{file_extension}"
-        file_path = os.path.join(UPLOAD_FOLDER, file_name)
-
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-        with open(file_path, "wb") as buffer:
-            buffer.write(image_file.file.read())
-
-        return file_path
+        try:
+            result = cloudinary.uploader.upload(
+                image_file.file,
+                folder="blog_images",
+                public_id=f"img_{uuid.uuid4().hex}",
+                resource_type="auto"
+            )
+            return result['secure_url']
+        except Exception as e:
+            print(f"Error uploading image: {e}")
+            return None
 
     def create_expert(self, expert_data: ExpertCreate, image_file: Optional[UploadFile], session: Session):
         image_path = self.save_image(image_file) if image_file else None

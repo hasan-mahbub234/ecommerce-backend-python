@@ -8,8 +8,14 @@ from fastapi import UploadFile
 import os
 from typing import Optional
 from ..blogs.service import BASE_URL
+import cloudinary 
+import cloudinary.uploader
 
-UPLOAD_FOLDER = "uploads/"
+cloudinary.config(
+    cloud_name="ddacq5ltb",
+    api_key="985616939343421",
+    api_secret="oI07cgZ3rGa0VJ8DW354oQV013g"
+)
 
 class PatnerService:
     def add_logo_host(self, patner: Patners):
@@ -32,21 +38,22 @@ class PatnerService:
             self.add_logo_host(patner)
         return patner
     
-    def save_logo(self, logo_file: UploadFile) -> Optional[str]:
-        """Save logo to disk and return the file path"""
-        if not logo_file:
+    def save_logo(self, image_file: UploadFile) -> Optional[str]:
+        """Save single image to Cloudinary and return URL"""
+        if not image_file:
             return None
 
-        file_extension = logo_file.filename.split(".")[-1]
-        file_name = f"{uuid.uuid4()}.{file_extension}"
-        file_path = os.path.join(UPLOAD_FOLDER, file_name)
-
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-        with open(file_path, "wb") as buffer:
-            buffer.write(logo_file.file.read())
-
-        return file_path
+        try:
+            result = cloudinary.uploader.upload(
+                image_file.file,
+                folder="blog_images",
+                public_id=f"img_{uuid.uuid4().hex}",
+                resource_type="auto"
+            )
+            return result['secure_url']
+        except Exception as e:
+            print(f"Error uploading image: {e}")
+            return None
     
     def create_patner(self, patner_data: PatnerCreate, logo_file: Optional[UploadFile], session: Session):
         logo_path = self.save_logo(logo_file) if logo_file else None

@@ -50,7 +50,7 @@ if not os.path.exists(upload_folder):
 app.mount("/uploads", StaticFiles(directory=upload_folder), name="uploads")
 
 
-app.include_router(product_router, prefix=f"/api/{version}/product", tags=['product'])
+app.include_router(product_router, prefix=f"/api/{version}/products", tags=['products'])
 app.include_router(category_router, prefix=f"/api/{version}/category", tags=['category'])
 app.include_router(sub_category_router, prefix=f"/api/{version}/sub_category", tags=['sub_category'])
 app.include_router(blog_router, prefix=f"/api/{version}/blogs", tags=['blogs'])

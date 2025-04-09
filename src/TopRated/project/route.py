@@ -2,20 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from src.db.database import get_session
 from .service import ProjectService
-from .schema import ProjectCreate, ProjectUpdate, Project
+from .schema import ProjectCreate, ProjectUpdate, Projects
 from typing import List, Optional
 import uuid
 from pydantic import ValidationError
 import json
 
-project_router = APIRouter(tags=["Projects"])
+project_router = APIRouter()
 project_service = ProjectService()
 
-@project_router.get("/", response_model=List[Project])
+@project_router.get("/", response_model=List[Projects])
 def list_projects(session: Session = Depends(get_session)):
     return project_service.get_all_projects(session)
 
-@project_router.post("/", response_model=Project, status_code=status.HTTP_201_CREATED)
+@project_router.post("/", response_model=Projects, status_code=status.HTTP_201_CREATED)
 def create_project(
     name: str = Form(...),
     desc: str = Form(...),
@@ -32,7 +32,7 @@ def create_project(
 
     return new_project
 
-@project_router.get("/{project_uid}", response_model=Project)
+@project_router.get("/{project_uid}", response_model=Projects)
 def get_project(project_uid: uuid.UUID, session: Session = Depends(get_session)):
     project = project_service.get_single_project(project_uid, session)
     if not project:
@@ -42,7 +42,7 @@ def get_project(project_uid: uuid.UUID, session: Session = Depends(get_session))
         )
     return project
 
-@project_router.patch("/{project_uid}", response_model=Project)
+@project_router.patch("/{project_uid}", response_model=Projects)
 def update_project(
     project_uid: uuid.UUID,
     name: Optional[str] = Form(None),
